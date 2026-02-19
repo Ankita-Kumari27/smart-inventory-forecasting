@@ -122,9 +122,14 @@ def main():
             st.plotly_chart(fig, use_container_width=True)
 
     if run or 'res' in st.session_state:
-        if run:
-            with st.spinner('🔄 Training models...'):
-                st.session_state['res'] = run_pipeline(df, pid, fdays, tdays)
+              if run:
+            progress = st.progress(0, text='🔄 Loading data...')
+            progress.progress(10, text='🔄 Engineering features...')
+            progress.progress(30, text='🔄 Training 7 models...')
+            st.session_state['res'] = run_pipeline(df, pid, fdays, tdays)
+            progress.progress(80, text='🔄 Generating forecast...')
+            progress.progress(100, text='✅ Done!')
+            progress.empty()
         if 'res' in st.session_state:
             r = st.session_state['res']
             with t3:

@@ -26,14 +26,14 @@ def train_models(X_train, X_test, y_train, y_test):
     scaler = StandardScaler()
     X_tr_s = scaler.fit_transform(X_train)
     X_te_s = scaler.transform(X_test)
-    models = {
+      models = {
         'Linear Regression': LinearRegression(),
         'Ridge Regression': Ridge(alpha=10),
         'Lasso Regression': Lasso(alpha=1.0),
-        'Random Forest': RandomForestRegressor(n_estimators=200, max_depth=15, min_samples_leaf=5, random_state=42, n_jobs=-1),
-        'Extra Trees': ExtraTreesRegressor(n_estimators=200, max_depth=15, min_samples_leaf=5, random_state=42, n_jobs=-1),
-        'Gradient Boosting': GradientBoostingRegressor(n_estimators=200, max_depth=6, learning_rate=0.1, random_state=42),
-        'XGBoost': XGBRegressor(n_estimators=300, max_depth=6, learning_rate=0.1, subsample=0.8, colsample_bytree=0.8, random_state=42, verbosity=0),
+        'Random Forest': RandomForestRegressor(n_estimators=100, max_depth=12, min_samples_leaf=5, random_state=42, n_jobs=-1),
+        'Extra Trees': ExtraTreesRegressor(n_estimators=100, max_depth=12, min_samples_leaf=5, random_state=42, n_jobs=-1),
+        'Gradient Boosting': GradientBoostingRegressor(n_estimators=100, max_depth=5, learning_rate=0.1, random_state=42),
+        'XGBoost': XGBRegressor(n_estimators=150, max_depth=5, learning_rate=0.1, subsample=0.8, colsample_bytree=0.8, random_state=42, verbosity=0),
     }
     results, trained, preds = [], {}, {}
     for name, model in models.items():
