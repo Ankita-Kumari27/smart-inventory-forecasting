@@ -16,6 +16,86 @@ from src.forecasting import forecast_future, calculate_inventory_recommendations
 st.set_page_config(page_title='Smart Inventory Forecast', page_icon='📦', layout='wide')
 
 
+def apply_theme(is_light):
+    if is_light:
+        st.markdown("""
+        <style>
+            .stApp {
+                background-color: #FFFFFF;
+                color: #333333;
+            }
+            .stSidebar > div {
+                background-color: #F0F2F6;
+            }
+            .stMetric label {
+                color: #555555 !important;
+            }
+            .stMetric [data-testid="stMetricValue"] {
+                color: #333333 !important;
+            }
+            h1, h2, h3 {
+                color: #1a1a1a !important;
+            }
+            .stTabs [data-baseweb="tab"] {
+                color: #333333;
+                background-color: #F0F2F6;
+            }
+            .stTabs [aria-selected="true"] {
+                background-color: #FFFFFF;
+                color: #2196F3 !important;
+                border-bottom: 3px solid #2196F3;
+            }
+            .stDownloadButton button {
+                background-color: #2196F3;
+                color: white;
+            }
+            [data-testid="stHeader"] {
+                background-color: #FFFFFF;
+            }
+            .stAlert {
+                color: #333333;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <style>
+            .stApp {
+                background-color: #0E1117;
+                color: #FAFAFA;
+            }
+            .stSidebar > div {
+                background-color: #1E2130;
+            }
+            .stMetric label {
+                color: #00BCD4 !important;
+            }
+            .stMetric [data-testid="stMetricValue"] {
+                color: #FAFAFA !important;
+            }
+            h1, h2, h3 {
+                color: #FAFAFA !important;
+            }
+            .stTabs [data-baseweb="tab"] {
+                color: #FAFAFA;
+                background-color: #1E2130;
+            }
+            .stTabs [aria-selected="true"] {
+                background-color: #0E1117;
+                color: #00BCD4 !important;
+                border-bottom: 3px solid #00BCD4;
+            }
+            .stDownloadButton button {
+                background-color: #00BCD4;
+                color: #0E1117;
+            }
+            [data-testid="stHeader"] {
+                background-color: #0E1117;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
+
 @st.cache_data
 def get_data():
     p = 'data/sales_data.csv'
@@ -43,6 +123,12 @@ def run_pipeline(_df, pid, fdays, tdays):
 
 
 def main():
+    # Theme switcher in sidebar
+    st.sidebar.title('🎨 Theme')
+    is_light = st.sidebar.toggle('☀️ Light Mode', value=False)
+    apply_theme(is_light)
+    st.sidebar.markdown('---')
+
     st.title('📦 Smart Inventory Forecasting')
     st.caption('AI-Powered Demand Prediction & Inventory Optimization')
     df = get_data()
@@ -62,6 +148,12 @@ def main():
     sf = st.sidebar.slider('Safety Factor', 1.0, 3.0, 1.5, 0.1)
     run = st.sidebar.button('🚀 Run Forecast', type='primary', use_container_width=True)
 
+    # Chart template based on theme
+    chart_template = 'plotly_white' if is_light else 'plotly_dark'
+    chart_bg = '#FFFFFF' if is_light else '#0E1117'
+    chart_text = '#333333' if is_light else '#FAFAFA'
+    chart_grid = '#E0E0E0' if is_light else '#2D3248'
+
     t1, t2, t3, t4, t5, t6 = st.tabs(['📊 Overview', '🔍 Product', '🤖 Models', '📈 Forecast', '📦 Inventory', '🎯 Scenarios'])
 
     with t1:
@@ -76,17 +168,21 @@ def main():
         dt['MA90'] = dt['quantity_sold'].rolling(90).mean()
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=dt['date'], y=dt['quantity_sold'], mode='lines', name='Daily', opacity=0.3))
-        fig.add_trace(go.Scatter(x=dt['date'], y=dt['MA30'], mode='lines', name='30d MA', line=dict(color='red', width=2)))
-        fig.add_trace(go.Scatter(x=dt['date'], y=dt['MA90'], mode='lines', name='90d MA', line=dict(color='green', width=2, dash='dash')))
-        fig.update_layout(height=400)
+        fig.add_trace(go.Scatter(x=dt['date'], y=dt['MA30'], mode='lines', name='30d MA', line=dict(color='#F44336', width=2)))
+        fig.add_trace(go.Scatter(x=dt['date'], y=dt['MA90'], mode='lines', name='90d MA', line=dict(color='#4CAF50', width=2, dash='dash')))
+        fig.update_layout(height=400, template=chart_template, paper_bgcolor=chart_bg, plot_bgcolor=chart_bg, font_color=chart_text)
         st.plotly_chart(fig, use_container_width=True)
         c1,c2 = st.columns(2)
         with c1:
             cr = df.groupby('category')['revenue'].sum().reset_index()
-            st.plotly_chart(px.pie(cr, values='revenue', names='category', hole=0.4, title='Revenue by Category'), use_container_width=True)
+            fig = px.pie(cr, values='revenue', names='category', hole=0.4, title='Revenue by Category')
+            fig.update_layout(template=chart_template, paper_bgcolor=chart_bg, font_color=chart_text)
+            st.plotly_chart(fig, use_container_width=True)
         with c2:
             ps = df.groupby('product_name')['quantity_sold'].sum().sort_values(ascending=True).reset_index()
-            st.plotly_chart(px.bar(ps, x='quantity_sold', y='product_name', orientation='h', title='Sales by Product', color='quantity_sold', color_continuous_scale='Blues'), use_container_width=True)
+            fig = px.bar(ps, x='quantity_sold', y='product_name', orientation='h', title='Sales by Product', color='quantity_sold', color_continuous_scale='Blues')
+            fig.update_layout(template=chart_template, paper_bgcolor=chart_bg, font_color=chart_text)
+            st.plotly_chart(fig, use_container_width=True)
 
     with t2:
         st.header(f'🔍 {sel}')
@@ -100,25 +196,27 @@ def main():
         pdd_plot['MA30'] = pdd_plot['quantity_sold'].rolling(30).mean()
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=pdd_plot['date'], y=pdd_plot['quantity_sold'], mode='lines', name='Daily', opacity=0.4))
-        fig.add_trace(go.Scatter(x=pdd_plot['date'], y=pdd_plot['MA30'], mode='lines', name='30d MA', line=dict(color='red', width=2)))
+        fig.add_trace(go.Scatter(x=pdd_plot['date'], y=pdd_plot['MA30'], mode='lines', name='30d MA', line=dict(color='#F44336', width=2)))
         promo_data = pdd_plot[pdd_plot['promotion']==1]
         if len(promo_data) > 0:
-            fig.add_trace(go.Scatter(x=promo_data['date'], y=promo_data['quantity_sold'], mode='markers', name='Promotions', marker=dict(color='green', size=5, symbol='triangle-up')))
-        fig.update_layout(height=400)
+            fig.add_trace(go.Scatter(x=promo_data['date'], y=promo_data['quantity_sold'], mode='markers', name='Promotions', marker=dict(color='#4CAF50', size=5, symbol='triangle-up')))
+        fig.update_layout(height=400, template=chart_template, paper_bgcolor=chart_bg, font_color=chart_text)
         st.plotly_chart(fig, use_container_width=True)
         c1,c2 = st.columns(2)
         with c1:
             pdd_plot['month_name'] = pdd_plot['date'].dt.month_name()
             month_order = ['January','February','March','April','May','June','July','August','September','October','November','December']
-            st.plotly_chart(px.box(pdd_plot, x='month_name', y='quantity_sold', title='Monthly Distribution', category_orders={'month_name': month_order}), use_container_width=True)
+            fig = px.box(pdd_plot, x='month_name', y='quantity_sold', title='Monthly Distribution', category_orders={'month_name': month_order})
+            fig.update_layout(template=chart_template, paper_bgcolor=chart_bg, font_color=chart_text)
+            st.plotly_chart(fig, use_container_width=True)
         with c2:
             anom = detect_anomalies(pdd)
             anomalies = anom[anom['is_anomaly']]
             fig = go.Figure()
             fig.add_trace(go.Scatter(x=anom['date'], y=anom['quantity_sold'], mode='lines', name='Sales', opacity=0.6))
             if len(anomalies) > 0:
-                fig.add_trace(go.Scatter(x=anomalies['date'], y=anomalies['quantity_sold'], mode='markers', name='Anomalies', marker=dict(color='red', size=8)))
-            fig.update_layout(title=f'Anomalies ({len(anomalies)} found)', height=400)
+                fig.add_trace(go.Scatter(x=anomalies['date'], y=anomalies['quantity_sold'], mode='markers', name='Anomalies', marker=dict(color='#F44336', size=8)))
+            fig.update_layout(title=f'Anomalies ({len(anomalies)} found)', height=400, template=chart_template, paper_bgcolor=chart_bg, font_color=chart_text)
             st.plotly_chart(fig, use_container_width=True)
 
     if run or 'res' in st.session_state:
@@ -133,22 +231,28 @@ def main():
                 st.dataframe(r['rdf'], use_container_width=True)
                 c1,c2 = st.columns(2)
                 with c1:
-                    st.plotly_chart(px.bar(r['rdf'], x='model', y='MAE', color='MAE', title='MAE (lower=better)', color_continuous_scale='RdYlGn_r'), use_container_width=True)
+                    fig = px.bar(r['rdf'], x='model', y='MAE', color='MAE', title='MAE (lower=better)', color_continuous_scale='RdYlGn_r')
+                    fig.update_layout(template=chart_template, paper_bgcolor=chart_bg, font_color=chart_text)
+                    st.plotly_chart(fig, use_container_width=True)
                 with c2:
-                    st.plotly_chart(px.bar(r['rdf'], x='model', y='R2', color='R2', title='R² (higher=better)', color_continuous_scale='RdYlGn'), use_container_width=True)
+                    fig = px.bar(r['rdf'], x='model', y='R2', color='R2', title='R² (higher=better)', color_continuous_scale='RdYlGn')
+                    fig.update_layout(template=chart_template, paper_bgcolor=chart_bg, font_color=chart_text)
+                    st.plotly_chart(fig, use_container_width=True)
                 td = r['tdf']
                 fig = go.Figure()
-                fig.add_trace(go.Scatter(x=td['date'], y=td['quantity_sold'], mode='lines', name='Actual', line=dict(color='black', width=2)))
+                fig.add_trace(go.Scatter(x=td['date'], y=td['quantity_sold'], mode='lines', name='Actual', line=dict(color='#FFFFFF' if not is_light else '#000000', width=2)))
                 cols = px.colors.qualitative.Set2
                 for i,(n,p) in enumerate(r['preds'].items()):
                     opacity = 1.0 if n == r['best'] else 0.4
                     width = 2.5 if n == r['best'] else 1.0
                     fig.add_trace(go.Scatter(x=td['date'], y=p, mode='lines', name=n, opacity=opacity, line=dict(color=cols[i%len(cols)], width=width)))
-                fig.update_layout(height=500, title='Predictions vs Actual')
+                fig.update_layout(height=500, title='Predictions vs Actual', template=chart_template, paper_bgcolor=chart_bg, font_color=chart_text)
                 st.plotly_chart(fig, use_container_width=True)
                 if r['imp'] is not None:
                     st.subheader('🔑 Top Features')
-                    st.plotly_chart(px.bar(r['imp'].head(15), x='importance', y='feature', orientation='h', title='Feature Importance', color='importance', color_continuous_scale='Viridis').update_layout(yaxis=dict(autorange='reversed'), height=500), use_container_width=True)
+                    fig = px.bar(r['imp'].head(15), x='importance', y='feature', orientation='h', title='Feature Importance', color='importance', color_continuous_scale='Viridis')
+                    fig.update_layout(yaxis=dict(autorange='reversed'), height=500, template=chart_template, paper_bgcolor=chart_bg, font_color=chart_text)
+                    st.plotly_chart(fig, use_container_width=True)
             with t4:
                 st.header(f'📈 {fdays}-Day Forecast')
                 fc = r['fc']
@@ -159,12 +263,12 @@ def main():
                 c4.metric('Min', f'{fc["predicted_demand"].min()}')
                 hist = r['pd'].tail(90)
                 fig = go.Figure()
-                fig.add_trace(go.Scatter(x=hist['date'], y=hist['quantity_sold'], mode='lines', name='Historical', line=dict(color='steelblue', width=2)))
-                fig.add_trace(go.Scatter(x=fc['date'], y=fc['predicted_demand'], mode='lines+markers', name='Forecast', line=dict(color='red', width=2, dash='dash'), marker=dict(size=4)))
+                fig.add_trace(go.Scatter(x=hist['date'], y=hist['quantity_sold'], mode='lines', name='Historical', line=dict(color='#2196F3', width=2)))
+                fig.add_trace(go.Scatter(x=fc['date'], y=fc['predicted_demand'], mode='lines+markers', name='Forecast', line=dict(color='#F44336', width=2, dash='dash'), marker=dict(size=4)))
                 fig.add_trace(go.Scatter(x=fc['date'], y=fc['predicted_demand']*1.2, mode='lines', showlegend=False, line=dict(width=0)))
-                fig.add_trace(go.Scatter(x=fc['date'], y=fc['predicted_demand']*0.8, fill='tonexty', fillcolor='rgba(255,0,0,0.1)', mode='lines', name='±20% Band', line=dict(width=0)))
+                fig.add_trace(go.Scatter(x=fc['date'], y=fc['predicted_demand']*0.8, fill='tonexty', fillcolor='rgba(244,67,54,0.1)', mode='lines', name='±20% Band', line=dict(width=0)))
                 fig.add_vline(x=fc['date'].iloc[0], line_dash='dot', line_color='gray')
-                fig.update_layout(height=500)
+                fig.update_layout(height=500, template=chart_template, paper_bgcolor=chart_bg, font_color=chart_text)
                 st.plotly_chart(fig, use_container_width=True)
                 dd = fc.copy()
                 dd['date'] = dd['date'].dt.strftime('%Y-%m-%d')
@@ -193,11 +297,11 @@ def main():
                     sd.append({'day':len(sd),'stock':stk})
                 spd = pd.DataFrame(sd)
                 fig = go.Figure()
-                fig.add_trace(go.Scatter(x=spd['day'], y=spd['stock'], mode='lines+markers', name='Stock', marker=dict(size=4)))
-                fig.add_hline(y=rec['reorder_point'], line_dash='dash', line_color='orange', annotation_text='Reorder')
-                fig.add_hline(y=rec['safety_stock'], line_dash='dash', line_color='red', annotation_text='Safety')
+                fig.add_trace(go.Scatter(x=spd['day'], y=spd['stock'], mode='lines+markers', name='Stock', marker=dict(size=4), line=dict(color='#2196F3')))
+                fig.add_hline(y=rec['reorder_point'], line_dash='dash', line_color='#FF9800', annotation_text='Reorder')
+                fig.add_hline(y=rec['safety_stock'], line_dash='dash', line_color='#F44336', annotation_text='Safety')
                 fig.add_hrect(y0=0, y1=rec['safety_stock'], fillcolor='red', opacity=0.1, line_width=0)
-                fig.update_layout(height=400, xaxis_title='Days', yaxis_title='Stock')
+                fig.update_layout(height=400, xaxis_title='Days', yaxis_title='Stock', template=chart_template, paper_bgcolor=chart_bg, font_color=chart_text)
                 st.plotly_chart(fig, use_container_width=True)
                 risk = rec['stockout_risk']
                 if risk == 'CRITICAL':
@@ -215,16 +319,16 @@ def main():
                 st.markdown('Compare optimistic, normal, and pessimistic demand scenarios.')
                 scenarios = r['scenarios']
                 fig = go.Figure()
-                sc_colors = {'optimistic':'green','normal':'steelblue','pessimistic':'red'}
+                sc_colors = {'optimistic':'#4CAF50','normal':'#2196F3','pessimistic':'#F44336'}
                 for name, data in scenarios.items():
                     sfc = data['forecast']
                     fig.add_trace(go.Scatter(x=sfc['date'], y=sfc['predicted_demand'], mode='lines', name=name.title(), line=dict(color=sc_colors.get(name,'gray'), width=2)))
-                fig.update_layout(height=400, title='Demand Scenarios')
+                fig.update_layout(height=400, title='Demand Scenarios', template=chart_template, paper_bgcolor=chart_bg, font_color=chart_text)
                 st.plotly_chart(fig, use_container_width=True)
-                cols = st.columns(3)
+                cols_sc = st.columns(3)
                 for i, (name, data) in enumerate(scenarios.items()):
                     srec = data['recommendation']
-                    with cols[i]:
+                    with cols_sc[i]:
                         st.subheader(f'{name.title()}')
                         st.metric('Total Demand', srec['total_forecasted_demand'])
                         st.metric('Order Qty', srec['recommended_order_qty'])
