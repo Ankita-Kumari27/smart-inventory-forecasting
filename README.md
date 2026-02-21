@@ -14,6 +14,8 @@
 </div>
 
 ---
+## Live Link
+https://smart-inventory-forecasting-ed5iezv8eykrolmcnz2pva.streamlit.app/
 
 ## 🎯 Problem Statement
 
